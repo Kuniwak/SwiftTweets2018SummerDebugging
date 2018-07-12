@@ -1,0 +1,160 @@
+では、「Swift デバッグの道具箱」について紹介します。まず自己紹介ですが、私は Swift のデバッグをとにかく楽にしたいという考えていて、そのため https://github.com/Kuniwak/MirrorDiffKit などを作成しています。
+
+![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/mirrordiffkit.png)
+
+---
+
+この発表では、デバッグを楽にする LLDB の基本的な使い方と、これを応用したデバッグ方法について解説します。まず、LLDB について軽く説明しましょう。LLDB はデバッガと呼ばれる開発用のツールで、ブレークポイントや変数の監視、コード実行などの機能をもちます。
+
+---
+
+Xcode や AppCode にも同様の機能があり、図で強調した部分は実際には LLDB の機能です。なお、LLDB は CLI も持っており、macOS ならば xcrun lldb で起動できます。これは Xcode 外でのプログラムのデバッグ時に便利です。
+
+![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/lldb-in-debugger.png)
+
+---
+
+では LLDB の使い方を見るために、iOS のアプリを LLDB でデバッグしてみましょう。何かの iOS アプリを Xcode で開き、Pause ボタン（または Debug > Pause）を押す LLDB が起動します。
+
+![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/how-to-launch-lldb.png)
+
+---
+
+次に LLDB を操作してみましょう。(lldb) の後に続けて help と入力し Return キーを入力してください。次のように LLDB でのコマンドの一覧が表示されます。ここではこのいくつかを説明します。
+
+```text:lldb-help-1
+(lldb) help
+Debugger commands:
+  apropos           -- List debugger commands related to a word or subject.
+  breakpoint        -- Commands for operating on breakpoints (see 'help b' for
+                       shorthand.)
+  ...
+```
+
+---
+
+まず、代表的なコマンドである po から説明しましょう。po についての詳細は help に続けて po と打つことで確認できます。
+
+```text:lldb-help-2
+(lldb) help po
+     Evaluate an expression on the current thread.  Displays any returned value
+     with formatting controlled by the type's author.  Expects 'raw' input (see
+     'help raw-input'.)
+```
+
+---
+
+help の情報を補足すると、po は Swift や Obj-C のコードを実行するコマンドです。試しに、次のように po コマンドで Hello, World を実行してみましょう。おや、エラーになりますね。
+
+```text:lldb-po-1
+(lldb) po print("Hello, World!")
+error: use of undeclared identifier 'print'
+```
+
+---
+
+この原因は、コードが Swift ではなく Obj-C と誤解されたことです。po は現在の関数スタックから言語を推定するため、Swift 以外の関数スタックにいる場合にこのエラーが発生します。試しに Obj-C のコードを実行して見れば正しく実行されます。
+
+---
+
+そこで、po に Swift を使いたいということを教えてあげましょう。もっとも簡単な方法は、画面左から Swift の関数スタックまで戻してあげることです。これによって先ほどのコマンドは正常に実行できるようになります。
+
+![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/select-main-thread.png)
+
+---
+
+また、po の代わりに expr を使うのも手です。expr もコードを実行でき、かつ言語を指定する -l オプションに swift を指定すれば、関数スタックによらず Swift のコードを実行できます。
+
+```text:lldb-po-3
+(lldb) expr -l swift -o -- print("Hello, World!")
+Hello, World!
+```
+
+---
+
+さて、先ほどの expr に -o というオプションがあることにお気付きでしたか？これは実行結果を人間に読みやすい形で整形するための機能です。これをつけないと po と同じ出力にはならないのです。というのも、実は po は expr -o -- の省略形なのです。
+
+---
+
+では、この po を駆使して面白いことにチャレンジしてみましょう。最終的なゴールは、LLDB から実行中のアプリの UIView をビルドなしに操作することです。
+
+---
+
+まず、次のコマンドを Swift の関数スタック上で実行してみてください。このコマンドは、現在の rootViewController の UIView の階層情報を出力するものです。
+
+```text:lldb-view-1
+(lldb) po UIApplication.shared.keyWindow!.rootViewController!.view!.value(forKey: "recursiveDescription")
+▿ Optional<Any>
+  - some : <UILayoutContainerView: 0x7fc285705ca0; frame = (0 0; 414 736); autoresize = W+H; gestureRecognizers = <NSArray: 0x60000224e070>; layer = <CALayer: 0x600002c1ae60>>
+   | <UINavigationTransitionView: 0x7fc28570b300; frame = (0 0; 414 736); clipsToBounds = YES; autoresize = W+H; layer = <CALayer: 0x600002c1b200>>
+   |    | <UIViewControllerWrapperView: 0x7fc2857162e0; frame = (0 0; 414 736); layer = <CALayer: 0x600002c2e8a0>>
+   ...
+```
+
+---
+
+このうち、以下の UILabel の表示に着目します。ここには、UILabel のアドレス情報や代表的なプロパティの情報が表示されています。そして、実はメモリのアドレスがわかると面白いことができます。
+
+```text:lldb-view-2
+<UILabel: 0x7fb853407440; frame = (10 48.6667; 394 0); alpha = 0; userInteractionEnabled = NO; layer = <_UILabelLayer: 0x6000037085a0>>
+```
+
+---
+
+メモリアドレスと型がわかっている場合、unsafeBitCast(_:to:) という関数からインスタンスを無理やり作成できます。これを、$label という変数に格納します。
+
+```text:lldb-view-3
+(lldb) po let $label = unsafeBitCast(0x7fb853407440, to: UILabel.self)
+
+(lldb) po $label
+<UILabel: 0x7fb853407440; frame = (10 48.6667; 394 0); alpha = 0; userInteractionEnabled = NO; layer = <_UILabelLayer: 0x6000037085a0>>
+```
+
+---
+
+ここで、変数名の先頭に $ をつけたのは、LLDB 上で何かを宣言する場合の作法です。もし、これをつけないと宣言は無視されてしまいます。同様に、class/struct/enum/func を宣言する場合も $ を先頭につけてください。
+
+---
+
+では、手元の $label を編集してみましょう。試しに UILabel の表示文字列を変更してみます。
+
+```text:lldb-view-4
+(lldb) po $label.text = "Hello, World!"
+```
+
+---
+
+このままでは表示に反映されないので、アプリの実行を再開します。Pause ボタンと入れ替わりに表示されている Continue ボタンを押してください（Debug > Continue でも可）。また、LLDB で continue を実行しても再開できます。
+
+---
+
+UILabel の変更が表示に反映されたでしょうか？このように、LLDB を駆使するとアプリのビルドをせずに簡単な UI の表示調整をおこなえます。実際に、私はこのテクニックをデザイナーによる目視調整に活用していました。
+
+---
+
+さて、先ほどの長いコマンドを都度入力するのは面倒ですよね。そこで、先ほどの po のようなコマンドの省略形を用意できれば、もっと便利になりそうです。
+
+---
+
+次のコマンドは、前のコマンドを view という別名で実行できるようにするものです。
+
+```text:lldb-alias
+(lldb) command alias view expression -o -l swift -- UIApplication.shared.keyWindow!.rootViewController!.view!.value(forKey: "recursiveDescription")
+
+(lldb) view
+▿ Optional<Any>
+  - some : <UILayoutContainerView: 0x7fb853412b20; frame = (0 0; 414 736); autoresize = W+H; gestureRecognizers = <NSArray: 0x600001a70de0>; layer = <CALayer: 0x600001469be0>>
+  ...
+```
+
+---
+
+ただし、この alias は LLDB を再起動してしまうと揮発してしまいます。そこで、.lldbinit という Python のスクリプトを使って毎回 alias として設定されるようにできます（しかし長くなるので割愛します）。
+
+---
+
+なお、既に便利な alias 集も存在するようです。 https://github.com/DerekSelander/LLDB
+
+---
+
+いかがでしたでしょうか？今回紹介した LLDB の機能はごく一部です。実際には、メモリの内容を読んだり、REPL を開いたりといった便利な機能がたくさん備わっています。ぜひ LLDB について勉強してみてください！発表は以上です。
