@@ -8,7 +8,7 @@
 
 ---
 
-Xcode や AppCode にも同様の機能があり、図で強調した部分は実際には LLDB の機能です。なお、LLDB は CLI も持っており、macOS ならば xcrun lldb で起動できます。これは Xcode 外でのプログラムのデバッグ時に便利です。
+Xcode や AppCode にも同様の機能がありますが、図で示す部分は実際には LLDB の機能です。なお、LLDB は CLI も持っており、macOS ならば xcrun lldb で起動できます。これは Xcode 外でのプログラムのデバッグ時に便利です。
 
 ![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/lldb-in-debugger.png)
 
