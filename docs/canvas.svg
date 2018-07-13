@@ -32390,7 +32390,9 @@ eg8AAAAASUVORK5CYII=
        style="fill:#000000;fill-opacity:0.29803922;stroke:none;stroke-width:10.58267689;stroke-linecap:square;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        d="M -1238.3672 2211.457 L -1238.3672 3312.791 L 190.96484 3312.791 L 190.96484 2211.457 L -1238.3672 2211.457 z M -1151.5625 2524.082 L -793.75 2524.082 L -793.75 2761.582 L -1151.5625 2761.582 L -1151.5625 2524.082 z "
        transform="scale(0.26458333)"
-       id="rect2583" />
+       id="rect2583"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
     <path
        id="path2599"
        transform="matrix(0.26458333,0,0,0.26458333,0,1.0583333)"

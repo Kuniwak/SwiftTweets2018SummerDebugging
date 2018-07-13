@@ -8,13 +8,13 @@
 
 ---
 
-Xcode や AppCode にも同様の機能がありますが、図で示す部分は実際には LLDB の機能です。なお、LLDB は CLI も持っており、macOS ならば xcrun lldb で起動できます。これは Xcode 外でのプログラムのデバッグ時に便利です。
+Xcode や AppCode にも同様の機能がありますが、図で示す部分は実際には LLDB の機能です。なお、LLDB は CLI も持っており、macOS ならば xcrun lldb で起動できます。これは Xcode などを使えないデバッグ時に便利です。
 
 ![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/lldb-in-debugger.png)
 
 ---
 
-では LLDB の使い方を見るために、iOS のアプリを LLDB でデバッグしてみましょう。何かの iOS アプリを Xcode で開き、Pause ボタン（または Debug > Pause）を押す LLDB が起動します。
+では LLDB の使い方を見るために、iOS のアプリを LLDB でデバッグしてみましょう。何かの iOS アプリを Xcode で開き、Pause ボタン（または Debug > Pause）を押すと LLDB が起動します。
 
 ![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/how-to-launch-lldb.png)
 
@@ -63,7 +63,7 @@ error: use of undeclared identifier 'print'
 
 ---
 
-また、po の代わりに expr を使うのも手です。expr もコードを実行でき、かつ言語を指定する -l オプションに swift を指定すれば、関数スタックによらず Swift のコードを実行できます。
+また、po の代わりに expr を使うのも手です。expr もコードを実行でき、かつ言語を指定する -l オプションに swift を指定できるので、関数スタックによらず Swift のコードを実行できます。
 
 ```text:lldb-po-3
 (lldb) expr -l swift -o -- print("Hello, World!")
@@ -93,7 +93,7 @@ Hello, World!
 
 ---
 
-このうち、以下の UILabel の表示に着目します。ここには、UILabel のアドレス情報や代表的なプロパティの情報が表示されています。そして、実はメモリのアドレスがわかると面白いことができます。
+このうち、以下の UILabel の表示に着目します。ここには、UILabel のアドレス情報や代表的なプロパティの情報が表示されています。そして、実はアドレスがわかると面白いことをできます。
 
 ```text:lldb-view-2
 <UILabel: 0x7fb853407440; frame = (10 48.6667; 394 0); alpha = 0; userInteractionEnabled = NO; layer = <_UILabelLayer: 0x6000037085a0>>
@@ -112,7 +112,7 @@ Hello, World!
 
 ---
 
-ここで、変数名の先頭に $ をつけたのは、LLDB 上で何かを宣言する場合の作法です。もし、これをつけないと宣言は無視されてしまいます。同様に、class/struct/enum/func を宣言する場合も $ を先頭につけてください。
+ここで、変数名の先頭に $ をつけたのは、LLDB 上で何かを宣言する場合の作法です。もし、これをつけないと宣言は無視されてしまいます。同様に、class/struct/enum/func を宣言する場合も $ を名前の先頭につけてください。
 
 ---
 
