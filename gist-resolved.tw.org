@@ -1,6 +1,6 @@
 では、「Swift デバッグの道具箱」について紹介します。まず自己紹介ですが、私は Swift のデバッグをとにかく楽にしたいという考えていて、そのため https://github.com/Kuniwak/MirrorDiffKit などを作成しています。 #swtws
 
-![](./docs/mirrordiffkit.png)
+![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/mirrordiffkit.png)
 
 ---
 
@@ -10,13 +10,13 @@
 
 Xcode や AppCode にも同様の機能がありますが、図で示す部分は実際には LLDB の機能です。なお、LLDB は CLI も持っており、macOS ならば xcrun lldb で起動できます。これは Xcode などを使えないデバッグ時に便利です。 #swtws
 
-![](./docs/lldb-in-debugger.png)
+![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/lldb-in-debugger.png)
 
 ---
 
 では LLDB の使い方を見るために、iOS のアプリを LLDB でデバッグしてみましょう。何かの iOS アプリを Xcode で開き、Pause ボタン（または Debug > Pause）を押すと LLDB が起動します。 #swtws
 
-![](./docs/how-to-launch-lldb.png)
+![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/how-to-launch-lldb.png)
 
 ---
 
@@ -50,7 +50,7 @@ https://gist.github.com/2dc7bb2543acfee839107361bed35de2
 
 そこで、po に Swift を使いたいということを教えてあげましょう。もっとも簡単な方法は、画面左から Swift の関数スタックまで戻してあげることです。これによって先ほどのコマンドは正常に実行できるようになります。 #swtws
 
-![](./docs/select-main-thread.png)
+![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/select-main-thread.png)
 
 ---
 
