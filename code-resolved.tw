@@ -1,0 +1,137 @@
+では、「Swift デバッグの道具箱」について紹介します。まず自己紹介ですが、私は Swift のデバッグをとにかく楽にしたいという考えていて、そのため https://github.com/Kuniwak/MirrorDiffKit などを作成しています。 #swtws
+
+![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/mirrordiffkit.png)
+
+---
+
+この発表では、デバッグを楽にする LLDB の基本的な使い方と、これを応用したデバッグ方法について解説します。まず、LLDB について軽く説明しましょう。LLDB はデバッガと呼ばれる開発用のツールで、ブレークポイントや変数の監視、コード実行などの機能をもちます。 #swtws
+
+---
+
+Xcode や AppCode にも同様の機能がありますが、図で示す部分は実際には LLDB の機能です。なお、LLDB は CLI も持っており、macOS ならば xcrun lldb で起動できます。これは Xcode などを使えないデバッグ時に便利です。 #swtws
+
+![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/lldb-in-debugger.png)
+
+---
+
+では LLDB の使い方を見るために、iOS のアプリを LLDB でデバッグしてみましょう。何かの iOS アプリを Xcode で開き、Pause ボタン（または Debug > Pause）を押すと LLDB が起動します。 #swtws
+
+![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/how-to-launch-lldb.png)
+
+---
+
+次に LLDB を操作してみましょう。(lldb) の後に続けて help と入力し Return キーを入力してください。次のように LLDB でのコマンドの一覧が表示されます。ここではこのいくつかを説明します。 #swtws
+
+https://gist.github.com/86c3f02053d6842b809dbbc765c287cc
+
+![](gist:86c3f02053d6842b809dbbc765c287cc)
+
+---
+
+まず、代表的なコマンドである po から説明しましょう。po についての詳細は help に続けて po と打つことで確認できます。 #swtws
+
+https://gist.github.com/5112794dd3199cca717e1508a1b8caad
+
+![](gist:5112794dd3199cca717e1508a1b8caad)
+
+---
+
+help の情報を補足すると、po は Swift や Obj-C のコードを実行するコマンドです。試しに、次のように po コマンドで Hello, World を実行してみましょう。おや、エラーになりますね。 #swtws
+
+https://gist.github.com/2dc7bb2543acfee839107361bed35de2
+
+![](gist:2dc7bb2543acfee839107361bed35de2)
+
+---
+
+この原因は、コードが Swift ではなく Obj-C と誤解されたことです。po は現在の関数スタックから言語を推定するため、Swift 以外の関数スタックにいる場合にこのエラーが発生します。試しに Obj-C のコードを実行して見れば正しく実行されます。 #swtws
+
+---
+
+そこで、po に Swift を使いたいということを教えてあげましょう。もっとも簡単な方法は、画面左から Swift の関数スタックまで戻してあげることです。これによって先ほどのコマンドは正常に実行できるようになります。 #swtws
+
+![](https://raw.githubusercontent.com/Kuniwak/SwiftTweets2018SummerDebugging/master/docs/select-main-thread.png)
+
+---
+
+また、po の代わりに expr を使うのも手です。expr もコードを実行でき、かつ言語を指定する -l オプションに swift を指定できるので、関数スタックによらず Swift のコードを実行できます。 #swtws
+
+https://gist.github.com/442f9ec2e14ca48547505e72a8de28c5
+
+![](gist:442f9ec2e14ca48547505e72a8de28c5)
+
+---
+
+さて、先ほどの expr に -o というオプションがあることにお気付きでしたか？これは実行結果を人間に読みやすい形で整形するための機能です。これをつけないと po と同じ出力にはならないのです。というのも、実は po は expr -o -- の省略形なのです。 #swtws
+
+---
+
+では、この po を駆使して面白いことにチャレンジしてみましょう。最終的なゴールは、LLDB から実行中のアプリの UIView をビルドなしに操作することです。 #swtws
+
+---
+
+まず、次のコマンドを Swift の関数スタック上で実行してみてください。このコマンドは、現在の rootViewController の UIView の階層情報を出力するものです。 #swtws
+
+https://gist.github.com/23c8e728422f89d37129968b0659453c
+
+![](gist:23c8e728422f89d37129968b0659453c)
+
+---
+
+このうち、以下の UILabel の表示に着目します。ここには、UILabel のアドレス情報や代表的なプロパティの情報が表示されています。そして、実はアドレスがわかると面白いことをできます。 #swtws
+
+https://gist.github.com/d70e6f3cf95508b6b6d8e7b75e36e195
+
+![](gist:d70e6f3cf95508b6b6d8e7b75e36e195)
+
+---
+
+メモリアドレスと型がわかっている場合、unsafeBitCast(_:to:) という関数からインスタンスを無理やり作成できます。これを、$label という変数に格納します。 #swtws
+
+https://gist.github.com/a6aa643fdf36b15b87560650128e8e8e
+
+![](gist:a6aa643fdf36b15b87560650128e8e8e)
+
+---
+
+ここで、変数名の先頭に $ をつけたのは、LLDB 上で何かを宣言する場合の作法です。もし、これをつけないと宣言は無視されてしまいます。同様に、class/struct/enum/func を宣言する場合も $ を名前の先頭につけてください。 #swtws
+
+---
+
+では、手元の $label を編集してみましょう。試しに UILabel の表示文字列を変更してみます。 #swtws
+
+https://gist.github.com/bc579054d91b99655d2d064384de1842
+
+![](gist:bc579054d91b99655d2d064384de1842)
+
+---
+
+このままでは表示に反映されないので、アプリの実行を再開します。Pause ボタンと入れ替わりに表示されている Continue ボタンを押してください（Debug > Continue でも可）。また、LLDB で continue を実行しても再開できます。 #swtws
+
+---
+
+UILabel の変更が表示に反映されたでしょうか？このように、LLDB を駆使するとアプリのビルドをせずに簡単な UI の表示調整をおこなえます。実際に、私はこのテクニックをデザイナーによる目視調整に活用していました。 #swtws
+
+---
+
+さて、先ほどの長いコマンドを都度入力するのは面倒ですよね。そこで、先ほどの po のようなコマンドの省略形を用意できれば、もっと便利になりそうです。 #swtws
+
+---
+
+次のコマンドは、前のコマンドを view という別名で実行できるようにするものです。 #swtws
+
+https://gist.github.com/cca1616ad5ceaf8f5aba3c3effc77a21
+
+![](gist:cca1616ad5ceaf8f5aba3c3effc77a21)
+
+---
+
+ただし、この alias は LLDB を再起動してしまうと揮発してしまいます。そこで、.lldbinit という Python のスクリプトを使って毎回 alias として設定されるようにできます（しかし長くなるので割愛します）。 #swtws
+
+---
+
+なお、既に便利な alias 集も存在するようです。 https://github.com/DerekSelander/LLDB #swtws
+
+---
+
+いかがでしたでしょうか？今回紹介した LLDB の機能はごく一部です。実際には、メモリの内容を読んだり、REPL を開いたりといった便利な機能がたくさん備わっています。ぜひ LLDB について勉強してみてください！発表は以上です。 #swtws
